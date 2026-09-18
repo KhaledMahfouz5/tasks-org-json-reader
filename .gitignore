@@ -1,0 +1,39 @@
+# ---- dependencies ----
+node_modules/
+
+# ---- build output ----
+dist/
+build/
+*.tsbuildinfo
+
+# ---- sensitive / personal data ----
+# Real Tasks.org backups (personal task data — never commit)
+Tasks-backups/
+*.json.bak
+*~backup*
+
+# ---- TestSprite generated artifacts ----
+# Contains API config with credentials, auto-generated plans/code/reports
+testsprite_tests/
+
+# ---- local tooling / editor state ----
+.opencode/
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ---- env & secrets ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- logs ----
+*.log
+npm-debug.log*
+vite-debug.log*
+
