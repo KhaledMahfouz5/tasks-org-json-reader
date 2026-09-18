@@ -1,0 +1,187 @@
+{
+  "version": 151002,
+  "timestamp": 1789725600000,
+  "data": {
+    "tasks": [
+      {
+        "task": {
+          "title": "Buy groceries",
+          "priority": 2,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789032600000,
+          "notes": "milk\nbread\nleafy greens",
+          "remoteId": "7000000000000001",
+          "order": 1
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [{ "name": "groceries", "tagUid": "8000000000000001" }],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000001", "remoteId": "7000000000000991" }]
+      },
+      {
+        "task": {
+          "title": "Finish quarterly report",
+          "priority": 0,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789466400000,
+          "dueDate": 1789548000000,
+          "notes": "Overdue — schedule time today to wrap up",
+          "remoteId": "7000000000000002",
+          "order": 2
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [
+          { "name": "important", "tagUid": "8000000000000002" },
+          { "name": "finance", "tagUid": "8000000000000003" }
+        ],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000002", "remoteId": "7000000000000992" }]
+      },
+      {
+        "task": {
+          "title": "Call the dentist",
+          "priority": 1,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789032600000,
+          "dueDate": 1789725600000,
+          "remoteId": "7000000000000003",
+          "isCollapsed": true,
+          "order": 3,
+          "calendarURI": ""
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000001", "remoteId": "7000000000000993" }]
+      },
+      {
+        "task": {
+          "title": "Weekly team standup",
+          "priority": 3,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789032600000,
+          "recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;INTERVAL=1",
+          "remoteId": "7000000000000004",
+          "order": 4
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": []
+      },
+      {
+        "task": {
+          "title": "Water the plants",
+          "priority": 2,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789556400000,
+          "completionDate": 1789556400000,
+          "remoteId": "7000000000000005",
+          "order": 5
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000001", "remoteId": "7000000000000995" }]
+      },
+      {
+        "task": {
+          "title": "Fix leaking faucet",
+          "priority": 3,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789376400000,
+          "deletionDate": 1789376400000,
+          "remoteId": "7000000000000006",
+          "order": 6
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000001", "remoteId": "7000000000000996" }]
+      },
+      {
+        "task": {
+          "title": "Plan vacation itinerary",
+          "priority": 3,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789032600000,
+          "notes": "Search hotels and book flights",
+          "remoteId": "7000000000000007",
+          "sortField": "custom",
+          "timezone": "Asia/Riyadh"
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000002", "remoteId": "7000000000000997" }]
+      },
+      {
+        "task": {
+          "title": "Home maintenance",
+          "priority": 3,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789032600000,
+          "remoteId": "7000000000000008",
+          "order": 8
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000001", "remoteId": "7000000000000998" }]
+      },
+      {
+        "task": {
+          "title": "تجهيز رحلة نهاية الأسبوع 🏖️",
+          "priority": 3,
+          "creationDate": 1789032600000,
+          "modificationDate": 1789032600000,
+          "notes": "حجز الطيران وإعادة الشحن للجوال",
+          "remoteId": "7000000000000009",
+          "order": 9
+        },
+        "alarms": [],
+        "geofences": [],
+        "tags": [{ "name": "تدريب مهني", "tagUid": "8000000000000001" }],
+        "comments": [],
+        "attachments": [],
+        "caldavTasks": [{ "calendar": "9000000000000002", "remoteId": "7000000000000999" }]
+      }
+    ],
+    "places": [],
+    "tags": [
+      { "remoteId": "8000000000000001", "name": "groceries", "color": -8522750, "icon": "shopping_cart" },
+      { "remoteId": "8000000000000002", "name": "important", "color": -48303, "icon": "priority_high" },
+      { "remoteId": "8000000000000003", "name": "finance", "color": -85377, "icon": "account_balance" },
+      { "remoteId": "8000000000000004", "name": "تدريب مهني", "color": -16764673, "icon": "emoji_objects" }
+    ],
+    "filters": [],
+    "caldavAccounts": [{ "uuid": "6000000000000001", "accountType": 2 }],
+    "caldavCalendars": [
+      { "account": "6000000000000001", "uuid": "9000000000000001", "name": "Personal", "icon": "check_circle" },
+      { "account": "6000000000000001", "uuid": "9000000000000002", "name": "Work", "icon": "work" }
+    ],
+    "taskListMetadata": [],
+    "taskAttachments": [],
+    "intPrefs": {},
+    "longPrefs": {},
+    "stringPrefs": {},
+    "boolPrefs": { "backups_enabled": true },
+    "setPrefs": {}
+  }
+}
