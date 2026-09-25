@@ -301,78 +301,69 @@ function emptyData() {
  * `{version, timestamp, data:{tasks:[{task,…}], tags:[…], …}}` (Tasks.org >= ~15.000)
  * and the legacy flat `{tasks:[…]}` shape. Returns `{ ok, data, warnings, error }`.
  */
-export function parseBackup(text) {
+function parseReal(root) {
   const warnings = []
-  let root
-  try {
-    root = JSON.parse(text)
-  } catch (e) {
-    return { ok: false, data: null, warnings, error: `Invalid JSON — ${e.message}` }
+  const data = root.data
+  const defs = emptyData()
+  const unknownTop = {}
+  for (const t of ['tasks', 'places', 'tags', 'filters', 'caldavAccounts', 'caldavCalendars', 'taskListMetadata', 'taskAttachments']) {
+    defs[t] = Array.isArray(data[t]) ? data[t] : []
   }
-  if (!root || typeof root !== 'object' || Array.isArray(root)) {
-    return { ok: false, data: null, warnings, error: 'Backup root must be a JSON object' }
+  for (const p of ['intPrefs', 'longPrefs', 'stringPrefs', 'boolPrefs', 'setPrefs']) {
+    defs[p] = data[p] && typeof data[p] === 'object' && !Array.isArray(data[p]) ? data[p] : {}
   }
-
-  if (isRealBackup(root)) {
-    const data = root.data
-    const defs = emptyData()
-    const unknownTop = {}
-    for (const t of ['tasks', 'places', 'tags', 'filters', 'caldavAccounts', 'caldavCalendars', 'taskListMetadata', 'taskAttachments']) {
-      defs[t] = Array.isArray(data[t]) ? data[t] : []
-    }
-    for (const p of ['intPrefs', 'longPrefs', 'stringPrefs', 'boolPrefs', 'setPrefs']) {
-      defs[p] = data[p] && typeof data[p] === 'object' && !Array.isArray(data[p]) ? data[p] : {}
-    }
-    for (const k of Object.keys(data)) {
-      if (!DATA_KEYS.includes(k)) defs.other[k] = data[k] == null ? null : data[k]
-    }
-    if (!defs.other) defs.other = {}
-    for (const k of Object.keys(root)) {
-      if (!['version', 'timestamp', 'data'].includes(k)) unknownTop[k] = root[k]
-    }
-
-    const tasks = []
-    const rows = {}
-    const seenRid = new Set()
-    defs.tasks.forEach((row, i) => {
-      if (!row || typeof row !== 'object') {
-        warnings.push(`task #${i + 1} is not an object; skipped`)
-        return
-      }
-      if (!('task' in row)) {
-        warnings.push(`task #${i + 1} has no "task" object; skipped`)
-        return
-      }
-      const raw = row.task && typeof row.task === 'object' ? row.task : {}
-      if (raw.title === undefined) warnings.push(`task #${i + 1} missing title`)
-      const entity = normalizeRealTask(raw, i + 1)
-      if (seenRid.has(entity.remoteId)) warnings.push(`task #${i + 1} has duplicate remoteId`)
-      seenRid.add(entity.remoteId)
-      entity.listKey = Array.isArray(row.caldavTasks) && row.caldavTasks[0] ? String(row.caldavTasks[0].calendar || '') || null : null
-      tasks.push(entity)
-      const r = {}
-      for (const k of ROW_KEYS) {
-        if (k in row) r[k] = row[k]
-      }
-      rows[entity.remoteId] = r
-    })
-
-    return {
-      ok: true,
-      data: {
-        format: 'real',
-        version: num(root.version, 1),
-        timestamp: num(root.timestamp, 0),
-        tasks,
-        rows,
-        defs,
-        unknownTop
-      },
-      warnings
-    }
+  for (const k of Object.keys(data)) {
+    if (!DATA_KEYS.includes(k)) defs.other[k] = data[k] == null ? null : data[k]
+  }
+  if (!defs.other) defs.other = {}
+  for (const k of Object.keys(root)) {
+    if (!['version', 'timestamp', 'data'].includes(k)) unknownTop[k] = root[k]
   }
 
+  const tasks = []
+  const rows = {}
+  const seenRid = new Set()
+  defs.tasks.forEach((row, i) => {
+    if (!row || typeof row !== 'object') {
+      warnings.push(`task #${i + 1} is not an object; skipped`)
+      return
+    }
+    if (!('task' in row)) {
+      warnings.push(`task #${i + 1} has no "task" object; skipped`)
+      return
+    }
+    const raw = row.task && typeof row.task === 'object' ? row.task : {}
+    if (raw.title === undefined) warnings.push(`task #${i + 1} missing title`)
+    const entity = normalizeRealTask(raw, i + 1)
+    if (seenRid.has(entity.remoteId)) warnings.push(`task #${i + 1} has duplicate remoteId`)
+    seenRid.add(entity.remoteId)
+    entity.listKey = Array.isArray(row.caldavTasks) && row.caldavTasks[0] ? String(row.caldavTasks[0].calendar || '') || null : null
+    tasks.push(entity)
+    const r = {}
+    for (const k of ROW_KEYS) {
+      if (k in row) r[k] = row[k]
+    }
+    rows[entity.remoteId] = r
+  })
+
+  return {
+    ok: true,
+    data: {
+      format: 'real',
+      version: num(root.version, 1),
+      timestamp: num(root.timestamp, 0),
+      tasks,
+      rows,
+      defs,
+      unknownTop
+    },
+    warnings
+  }
+}
+
+function parseLegacy(root) {
   // legacy simple backup `{ version, tasks, lists, tags, places, alarms, ... }`
+  const warnings = []
   const unknownTop = {}
   for (const k of Object.keys(root)) {
     if (!['version', 'tasks', 'lists', 'tags'].includes(k)) unknownTop[k] = root[k]
@@ -412,66 +403,82 @@ export function parseBackup(text) {
   }
 }
 
+export function parseBackup(text) {
+  let root
+  try {
+    root = JSON.parse(text)
+  } catch (e) {
+    return { ok: false, data: null, warnings: [], error: `Invalid JSON — ${e.message}` }
+  }
+  if (!root || typeof root !== 'object' || Array.isArray(root)) {
+    return { ok: false, data: null, warnings: [], error: 'Backup root must be a JSON object' }
+  }
+  return isRealBackup(root) ? parseReal(root) : parseLegacy(root)
+}
+
 /**
  * Serialize a backup object back to JSON. Preserves unknown keys (round-trip safe).
  * Returns `{ data, warnings, error }`.
  */
-export function serializeBackup(backup) {
-  const warnings = []
-  try {
-    if (backup && backup.format === 'real') {
-      const defs = backup.defs || emptyData()
-      const rows = backup.rows || {}
-      const data = { ...emptyData() }
-      for (const k of Object.keys(defs)) {
-        if (k === 'other') continue
-        data[k] = defs[k] == null ? [] : defs[k]
-      }
-      if (defs.other) {
-        for (const k of Object.keys(defs.other)) data[k] = defs.other[k]
-      }
-      data.tasks = (backup.tasks || []).map((e) => {
-        const row = rows[e.remoteId] || {}
-        const out = { task: toRealEntity(e) }
-        for (const k of ROW_KEYS) {
-          if (k in row) out[k] = row[k]
-        }
-        for (const k of ['alarms', 'geofences', 'tags', 'comments', 'attachments', 'caldavTasks']) {
-          if (!(k in out)) out[k] = row[k] || []
-        }
-        return out
-      })
-      const root = {
-        version: num(backup.version, 1),
-        timestamp: num(backup.timestamp, Date.now()),
-        data
-      }
-      if (backup.unknownTop) {
-        for (const k of Object.keys(backup.unknownTop)) root[k] = backup.unknownTop[k]
-      }
-      return { data: JSON.stringify(root, null, 2), warnings, error: null }
+function serializeReal(backup) {
+  const defs = backup.defs || emptyData()
+  const rows = backup.rows || {}
+  const data = { ...emptyData() }
+  for (const k of Object.keys(defs)) {
+    if (k === 'other') continue
+    data[k] = defs[k] == null ? [] : defs[k]
+  }
+  if (defs.other) {
+    for (const k of Object.keys(defs.other)) data[k] = defs.other[k]
+  }
+  data.tasks = (backup.tasks || []).map((e) => {
+    const row = rows[e.remoteId] || {}
+    const out = { task: toRealEntity(e) }
+    for (const k of ROW_KEYS) {
+      if (k in row) out[k] = row[k]
     }
+    for (const k of ['alarms', 'geofences', 'tags', 'comments', 'attachments', 'caldavTasks']) {
+      if (!(k in out)) out[k] = row[k] || []
+    }
+    return out
+  })
+  const root = {
+    version: num(backup.version, 1),
+    timestamp: num(backup.timestamp, Date.now()),
+    data
+  }
+  if (backup.unknownTop) {
+    for (const k of Object.keys(backup.unknownTop)) root[k] = backup.unknownTop[k]
+  }
+  return JSON.stringify(root, null, 2)
+}
 
-    // legacy serialize
-    const out =
-      backup && typeof backup === 'object' && !Array.isArray(backup)
-        ? { ...backup }
-        : { version: 1 }
-    delete out.format
-    delete out.rows
-    delete out.unknownTop
-    const defs = (backup && backup.defs) || {}
-    out.version = num(out.version, 1)
-    out.tasks = (backup.tasks || []).map((t) => normalizeTask(t))
-    out.lists = Array.isArray(defs.lists) ? defs.lists : Array.isArray(out.lists) ? out.lists : []
-    out.tags = Array.isArray(defs.tags) ? defs.tags : Array.isArray(out.tags) ? out.tags : []
-    if (out.unknownTop) delete out.unknownTop
-    if (backup && backup.unknownTop) {
-      for (const k of Object.keys(backup.unknownTop)) out[k] = backup.unknownTop[k]
-    }
-    return { data: JSON.stringify(out, null, 2), warnings, error: null }
+function serializeLegacy(backup) {
+  const out =
+    backup && typeof backup === 'object' && !Array.isArray(backup)
+      ? { ...backup }
+      : { version: 1 }
+  delete out.format
+  delete out.rows
+  delete out.unknownTop
+  const defs = (backup && backup.defs) || {}
+  out.version = num(out.version, 1)
+  out.tasks = (backup.tasks || []).map((t) => normalizeTask(t))
+  out.lists = Array.isArray(defs.lists) ? defs.lists : Array.isArray(out.lists) ? out.lists : []
+  out.tags = Array.isArray(defs.tags) ? defs.tags : Array.isArray(out.tags) ? out.tags : []
+  if (out.unknownTop) delete out.unknownTop
+  if (backup && backup.unknownTop) {
+    for (const k of Object.keys(backup.unknownTop)) out[k] = backup.unknownTop[k]
+  }
+  return JSON.stringify(out, null, 2)
+}
+
+export function serializeBackup(backup) {
+  try {
+    const data = backup && backup.format === 'real' ? serializeReal(backup) : serializeLegacy(backup)
+    return { data, warnings: [], error: null }
   } catch (e) {
-    return { data: null, warnings, error: e.message }
+    return { data: null, warnings: [], error: e.message }
   }
 }
 

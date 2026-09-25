@@ -21,6 +21,7 @@ export const translations = {
     autoSave: 'Auto-save to file',
     autoSaveDesc: 'Write every edit straight back to the backup file.',
     saved: 'Saved',
+    autoSaveFailed: 'Auto-save failed: {error}',
     syncStatus: 'Syncing to {name}',
     syncNotSet: 'No sync folder set',
     autoSaveUnsupported:
@@ -152,6 +153,7 @@ export const translations = {
     autoSave: 'الحفظ التلقائي إلى ملف',
     autoSaveDesc: 'اكتب كل تعديل مباشرة إلى ملف النسخة.',
     saved: 'تم الحفظ',
+    autoSaveFailed: 'فشل الحفظ التلقائي: {error}',
     syncStatus: 'المزامنة إلى {name}',
     syncNotSet: 'لم يُحدَّد مجلد مزامنة',
     autoSaveUnsupported:
