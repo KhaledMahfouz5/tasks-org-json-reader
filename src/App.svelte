@@ -119,6 +119,13 @@
     window.addEventListener('drop', onDrop)
     window.addEventListener('keydown', onKey)
 
+    if (import.meta.env.MODE === 'test') {
+      fetch('/Tasks-backups/tasks-backup.json')
+        .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+        .then((text) => applyBackup(text, 'tasks-backup.json'))
+        .catch(() => {})
+    }
+
     cleanupFns = [
       () => {
         if (mq.removeEventListener) mq.removeEventListener('change', onMq)
