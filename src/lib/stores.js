@@ -118,6 +118,54 @@ function stubRow() {
   return { alarms: [], geofences: [], tags: [], comments: [], attachments: [], caldavTasks: [] }
 }
 
+function commitRealRecord(next, task, listId, tagNames) {
+  const rows = { ...(next.rows || {}) }
+  const row = { ...stubRow(), ...(rows[task.remoteId] || {}) }
+  if (Array.isArray(tagNames)) {
+    const built = buildRowTags(next, tagNames)
+    row.tags = built.tags
+    if (built.newDefs.length) {
+      const tagsDefs = [...(next.defs.tags || []), ...built.newDefs]
+      next.defs = { ...next.defs, tags: tagsDefs }
+    }
+  }
+  if (listId != null) {
+    const current = Array.isArray(row.caldavTasks) ? row.caldavTasks[0] : null
+    row.caldavTasks = [
+      { calendar: String(listId), remoteId: (current && current.remoteId) || newRemoteId() }
+    ]
+  }
+  rows[task.remoteId] = row
+  next.rows = rows
+  return next
+}
+
+function commitLegacyRecord(next, task, listId, tagNames) {
+  if (Array.isArray(tagNames)) {
+    const others = (next.defs.tags || []).filter((k) => k.taskUid !== task.remoteId)
+    const byName = new Map(others.map((k) => [k.name, k.tagUid]))
+    let nextId = others.reduce((m, k) => Math.max(m, k.id || 0), 0)
+    const made = []
+    for (const raw of tagNames) {
+      const name = String(raw).trim()
+      if (!name) continue
+      let uid = byName.get(name)
+      if (!uid) {
+        uid = newRemoteId()
+        byName.set(name, uid)
+      }
+      nextId += 1
+      made.push({ id: nextId, name, tagUid: uid, taskUid: task.remoteId })
+    }
+    next.defs = { ...next.defs, tags: [...others, ...made] }
+  }
+  if (listId != null) {
+    task.listId = listId
+    next.tasks = [...next.tasks]
+  }
+  return next
+}
+
 /**
  * Save a task (create or update). Also applies the chosen list and tag names:
  * real backups keep tags in the task row and the list in its caldavTasks entry,
@@ -141,51 +189,9 @@ export function commitTask(task, listId, tagNames) {
     else tasks.push(finalTask)
 
     const next = { ...d, tasks }
-
-    if (d.format === 'real') {
-      const rows = { ...(d.rows || {}) }
-      const row = { ...stubRow(), ...(rows[finalTask.remoteId] || {}) }
-      if (Array.isArray(tagNames)) {
-        const built = buildRowTags(d, tagNames)
-        row.tags = built.tags
-        if (built.newDefs.length) {
-          const tagsDefs = [...(d.defs.tags || []), ...built.newDefs]
-          next.defs = { ...d.defs, tags: tagsDefs }
-        }
-      }
-      if (listId != null) {
-        const current = Array.isArray(row.caldavTasks) ? row.caldavTasks[0] : null
-        row.caldavTasks = [
-          { calendar: String(listId), remoteId: (current && current.remoteId) || newRemoteId() }
-        ]
-      }
-      rows[finalTask.remoteId] = row
-      next.rows = rows
-    } else {
-      if (Array.isArray(tagNames)) {
-        const others = (d.defs.tags || []).filter((k) => k.taskUid !== finalTask.remoteId)
-        const byName = new Map(others.map((k) => [k.name, k.tagUid]))
-        let nextId = others.reduce((m, k) => Math.max(m, k.id || 0), 0)
-        const made = []
-        for (const raw of tagNames) {
-          const name = String(raw).trim()
-          if (!name) continue
-          let uid = byName.get(name)
-          if (!uid) {
-            uid = newRemoteId()
-            byName.set(name, uid)
-          }
-          nextId += 1
-          made.push({ id: nextId, name, tagUid: uid, taskUid: finalTask.remoteId })
-        }
-        next.defs = { ...d.defs, tags: [...others, ...made] }
-      }
-      if (listId != null) {
-        finalTask.listId = listId
-        next.tasks = tasks
-      }
-    }
-    return next
+    return d.format === 'real'
+      ? commitRealRecord(next, finalTask, listId, tagNames)
+      : commitLegacyRecord(next, finalTask, listId, tagNames)
   })
   return task
 }
@@ -293,8 +299,9 @@ export async function autoSaveNow() {
     await w.close()
     currentFileHandle.set(fh)
     notify(tr(get(lang), 'saved'), 'ok')
-  } catch {
-    // FSA unavailable or user cancelled — skip silently
+  } catch (e) {
+    if (e && e.name === 'AbortError') return // user cancelled the picker
+    notify(tr(get(lang), 'autoSaveFailed', { error: e && e.message ? e.message : '…' }), 'err')
   }
 }
 
