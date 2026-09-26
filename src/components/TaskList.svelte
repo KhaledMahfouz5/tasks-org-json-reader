@@ -58,7 +58,7 @@
 
   $: tree = filter === 'all' && !query && filtered.some((t) => t.parent && filtered.some((p) => p.id === t.parent))
 
-  function treeRows(list) {
+  function nodeRows(list) {
     const byParent = new Map()
     const ids = new Set(list.map((t) => t.id))
     for (const t of list) {
@@ -77,7 +77,7 @@
     return out
   }
 
-  $: rows = tree ? treeRows(filtered) : sortTasks(filtered).map((t) => ({ t, depth: 0 }))
+  $: rows = tree ? nodeRows(filtered) : sortTasks(filtered).map((t) => ({ t, depth: 0 }))
 
   function bucket(t) {
     if (!hasDueDate(t)) return 'someday'
@@ -105,10 +105,14 @@
       const map = { overdue: [], today: [], upcoming: [], someday: [] }
       for (const t of filtered) map[bucket(t)].push(t)
       return ['overdue', 'today', 'upcoming', 'someday']
-        .map((key) => ({ key, label: tr($lang, `group.${key}`), items: sortTasks(map[key]) }))
+        .map((key) => {
+          const items = sortTasks(map[key])
+          return { key, label: tr($lang, `group.${key}`), items, rows: nodeRows(items) }
+        })
         .filter((g) => g.items.length)
     }
-    return [{ key: filter, label: singleLabel || tr($lang, filter), items: sortTasks(filtered) }]
+    const items = sortTasks(filtered)
+    return [{ key: filter, label: singleLabel || tr($lang, filter), items, rows: nodeRows(items) }]
   })()
 
   function currentListKey() {
@@ -134,8 +138,8 @@
       <span class="nav-count">{g.items.length}</span>
     </div>
     <div class="task-list">
-      {#each g.items as t (t.remoteId || t.id)}
-        <TaskItem task={t} depth={0} />
+      {#each g.rows as { t, depth } (t.remoteId || t.id)}
+        <TaskItem task={t} {depth} />
       {/each}
     </div>
   {/each}
