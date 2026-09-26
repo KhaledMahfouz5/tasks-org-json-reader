@@ -15,6 +15,7 @@ Tasks-backups/
 # ---- TestSprite generated artifacts ----
 # Contains API config with credentials, auto-generated plans/code/reports
 testsprite_tests/
+.testsprite/
 
 # ---- local tooling / editor state ----
 .opencode/
@@ -37,3 +38,5 @@ Thumbs.db
 npm-debug.log*
 vite-debug.log*
 
+testsprite_tests/tmp/
+testsprite_tests/tmp/config.json
