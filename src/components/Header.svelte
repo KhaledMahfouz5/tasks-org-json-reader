@@ -1,5 +1,5 @@
 <script>
-  import { sidebarOpen, syncOpen, lang, theme, searchQuery } from '@/lib/stores.js'
+  import { sidebarOpen, syncOpen, lang, theme, searchQuery } from '@/lib/state.js'
   import { tr } from '@/lib/i18n.js'
 
   function toggleLang() {

@@ -5,15 +5,22 @@
     editingListId,
     backupData,
     lang,
-    confirmState,
-    notify
-  } from '@/lib/stores.js'
-  import { commitTask, softDeleteTask, nextFreeId } from '@/lib/stores.js'
+    confirmState
+  } from '@/lib/state.js'
+  import {
+    commitTask,
+    softDeleteTask,
+    nextFreeId
+  } from '@/lib/state.js'
+  import { notify } from '@/lib/notify.js'
   import { tr } from '@/lib/i18n.js'
   import {
     PRIORITIES,
     tagsFor,
     listsOf,
+    childrenOf,
+    parentOf,
+    isDone,
     recurrenceSummary
   } from '@/lib/backup.js'
 
@@ -121,6 +128,15 @@
     editingListId.set(null)
   }
 
+  function openChild(child) {
+    editing.set(child)
+    editingListId.set(child.listKey || null)
+  }
+
+  function openParent() {
+    if (parent) editing.set(parent)
+  }
+
   function backdropKey(e) {
     if (e.target !== e.currentTarget) return
     if (e.key === 'Enter' || e.key === ' ') {
@@ -148,6 +164,8 @@
   $: recPreview = recurrenceSummary(form.recurrence, $lang)
   $: isNew = task && task.id === 0
   $: readonly = !!(task && task.read_only)
+  $: parent = task ? parentOf(task, (data && data.tasks) || []) : null
+  $: subtasks = task ? childrenOf(task, (data && data.tasks) || []) : []
 </script>
 
 {#if task}
@@ -186,6 +204,28 @@
           placeholder={tr($lang, 'taskTitle')}
         />
       </div>
+
+      {#if parent || subtasks.length}
+        <div class="field">
+          <span class="small" style="font-weight:600;color:var(--muted)">{tr($lang, 'relations')}</span>
+          <div class="relations">
+            {#if parent}
+              <button class="rel-chip rel-parent" type="button" on:click={openParent} disabled={readonly}>
+                <span class="rel-arrow">↑</span>
+                <span class="rel-label">{tr($lang, 'parent')}</span>
+                <span class="rel-title">{parent.title || tr($lang, 'untitled')}</span>
+              </button>
+            {/if}
+            {#each subtasks as sub (sub.remoteId || sub.id)}
+              <button class="rel-chip rel-child" type="button" on:click={() => openChild(sub)} disabled={readonly}>
+                <span class="rel-arrow">↓</span>
+                <span class="rel-title">{sub.title || tr($lang, 'untitled')}</span>
+                {#if isDone(sub)}<span class="rel-done">✓</span>{/if}
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
 
       <div class="field">
         <label for="ed-notes">{tr($lang, 'taskNotes')}</label>

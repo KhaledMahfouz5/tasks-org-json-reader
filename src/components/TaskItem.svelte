@@ -6,7 +6,13 @@
     editingListId,
     confirmState,
     lang
-  } from '@/lib/stores.js'
+  } from '@/lib/state.js'
+  import {
+    setTaskDone,
+    softDeleteTask,
+    restoreTask,
+    toggleCollapsed
+  } from '@/lib/state.js'
   import {
     isDone,
     isDeleted,
@@ -16,15 +22,10 @@
     recurrenceSummary,
     tagsFor,
     listOf,
+    parentOf,
     startOfToday
   } from '@/lib/backup.js'
   import { tr } from '@/lib/i18n.js'
-  import {
-    setTaskDone,
-    softDeleteTask,
-    restoreTask,
-    toggleCollapsed
-  } from '@/lib/stores.js'
 
   export let task
   export let depth = 0
@@ -32,6 +33,7 @@
   $: done = isDone(task)
   $: overdue = hasDueDate(task) && !done && task.dueDate < startOfToday()
   $: hasKids = hasSubtask(task, ($backupData && $backupData.tasks) || [])
+  $: parent = parentOf(task, ($backupData && $backupData.tasks) || [])
   $: tags = $backupData ? tagsFor($backupData, task) : []
   $: listColor = $backupData ? (listOf($backupData, task.listKey) || {}).color : null
   $: trashView = $activeFilter === 'trash'
@@ -60,6 +62,10 @@
 
   function goTag(tagUid) {
     activeFilter.set(`tag:${tagUid}`)
+  }
+
+  function jumpToParent() {
+    if (parent) editing.set(parent)
   }
 
   function onKey(e) {
@@ -123,6 +129,14 @@
           title={recurrenceSummary(task.recurrence, $lang)}
           aria-label={recurrenceSummary(task.recurrence, $lang)}
         >↻</span>
+      {/if}
+      {#if parent}
+        <button
+          class="chip parent-chip"
+          title={parent.title || tr($lang, 'untitled')}
+          aria-label={tr($lang, 'parentTask', { title: parent.title || tr($lang, 'untitled') })}
+          on:click|stopPropagation={jumpToParent}
+        >↑ {parent.title || tr($lang, 'untitled')}</button>
       {/if}
     </div>
 
