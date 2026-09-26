@@ -242,36 +242,58 @@ export function normalizeRealTask(t, idx) {
   return out
 }
 
+/**
+ * Map of internal -> real Tasks.org field for serialization.
+ *   `omit`: 'zero'   — drop when value is null/undefined/0 (timestamps, parent, etc.)
+ *           'truthy' — drop on falsy (strings/booleans/numbers where 0 means none)
+ *           'default:<v>' — drop when value strictly equals <v>
+ *   `rename`: optional override (defaults to internal name)
+ */
+const REAL_FIELDS = [
+  { internal: 'title',          rename: 'title',          omit: 'default:null' },
+  { internal: 'importance',     rename: 'priority',       omit: 'default:3' },
+  { internal: 'dueDate',        rename: 'dueDate',        omit: 'zero' },
+  { internal: 'hideUntil',      rename: 'hideUntil',      omit: 'zero' },
+  { internal: 'created',        rename: 'creationDate',   omit: 'zero' },
+  { internal: 'modified',       rename: 'modificationDate', omit: 'zero' },
+  { internal: 'completed',      rename: 'completionDate', omit: 'zero' },
+  { internal: 'deleted',        rename: 'deletionDate',   omit: 'zero' },
+  { internal: 'notes',          rename: 'notes',          omit: 'truthy' },
+  { internal: 'estimatedSeconds', omit: 'truthy' },
+  { internal: 'elapsedSeconds',  omit: 'truthy' },
+  { internal: 'timerStart',     rename: 'timerStart',     omit: 'zero' },
+  { internal: 'ringFlags',      rename: 'ringFlags',      omit: 'truthy' },
+  { internal: 'lastNotified',   rename: 'reminderLast',   omit: 'zero' },
+  { internal: 'recurrence',     rename: 'recurrence',     omit: 'truthy' },
+  { internal: 'repeatFrom',     rename: 'repeatFrom',     omit: 'truthy' },
+  { internal: 'calendarUri',    rename: 'calendarURI',    omit: 'truthy' },
+  { internal: 'remoteId',       rename: 'remoteId',       omit: 'default:null' },
+  { internal: 'collapsed',      rename: 'isCollapsed',    omit: 'truthy' },
+  { internal: 'parent',         rename: 'parent',         omit: 'zero' },
+  { internal: 'order',          rename: 'order',          omit: 'truthy' },
+  { internal: 'read_only',      rename: 'readOnly',       omit: 'truthy' }
+]
+
+function shouldOmit(spec, v) {
+  if (v == null) return true
+  switch (spec.omit) {
+    case 'zero':   return v === 0
+    case 'truthy': return !v
+    default: {
+      const m = /^default:(.+)$/.exec(spec.omit)
+      return m ? v === JSON.parse(m[1]) : false
+    }
+  }
+}
+
 /** Internal field to a real Tasks.org task object. Omitted keys stay at schema defaults. */
 function toRealEntity(e) {
   const out = {}
-  const put = (internal, real, ndef) => {
-    const v = e[internal]
-    if (v !== undefined && v !== ndef) out[real] = v
+  for (const spec of REAL_FIELDS) {
+    const v = e[spec.internal]
+    if (shouldOmit(spec, v)) continue
+    out[spec.rename || spec.internal] = v
   }
-  const is0 = (v) => v == null || v === 0
-  put('title', 'title', null)
-  put('importance', 'priority', 3)
-  if (!is0(e.dueDate)) out.dueDate = e.dueDate
-  if (!is0(e.hideUntil)) out.hideUntil = e.hideUntil
-  if (!is0(e.created)) out.creationDate = e.created
-  if (!is0(e.modified)) out.modificationDate = e.modified
-  if (!is0(e.completed)) out.completionDate = e.completed
-  if (!is0(e.deleted)) out.deletionDate = e.deleted
-  if (e.notes) out.notes = e.notes
-  if (e.estimatedSeconds) out.estimatedSeconds = e.estimatedSeconds
-  if (e.elapsedSeconds) out.elapsedSeconds = e.elapsedSeconds
-  if (!is0(e.timerStart)) out.timerStart = e.timerStart
-  if (e.ringFlags) out.ringFlags = e.ringFlags
-  if (!is0(e.lastNotified)) out.reminderLast = e.lastNotified
-  if (e.recurrence) out.recurrence = e.recurrence
-  if (e.repeatFrom) out.repeatFrom = e.repeatFrom
-  if (e.calendarUri) out.calendarURI = e.calendarUri
-  put('remoteId', 'remoteId', null)
-  if (e.collapsed) out.isCollapsed = true
-  if (!is0(e.parent)) out.parent = e.parent
-  if (e.order) out.order = e.order
-  if (e.read_only) out.readOnly = e.read_only
   for (const k of Object.keys(e)) {
     if (!REAL_EXTRA_SKIP.has(k)) out[k] = e[k]
   }
@@ -345,6 +367,27 @@ function parseReal(root) {
     }
     rows[entity.remoteId] = r
   })
+
+  // Resolve CalDAV parent links: a child's caldavTasks[0].remoteParent holds the
+  // parent's CalDAV remoteId. Set entity.parent to the parent's internal id so
+  // the existing tree / hasSubtask logic can find children — only when the
+  // parent is present in this same backup, otherwise the link is dangling.
+  const calRidToTask = new Map()
+  for (const t of tasks) {
+    const r = rows[t.remoteId]
+    const cals = r && Array.isArray(r.caldavTasks) ? r.caldavTasks : []
+    const calRid = cals[0] && cals[0].remoteId
+    if (calRid) calRidToTask.set(String(calRid), t)
+  }
+  for (const t of tasks) {
+    if (t.parent) continue
+    const r = rows[t.remoteId]
+    const cals = r && Array.isArray(r.caldavTasks) ? r.caldavTasks : []
+    const parentCalRid = cals[0] && cals[0].remoteParent
+    if (!parentCalRid) continue
+    const parent = calRidToTask.get(String(parentCalRid))
+    if (parent) t.parent = parent.id
+  }
 
   return {
     ok: true,
@@ -513,6 +556,16 @@ export function hasDueDate(t) {
 export function hasSubtask(t, tasks) {
   if (!t || !Array.isArray(tasks)) return false
   return tasks.some((c) => c && c.parent === t.id)
+}
+
+export function childrenOf(t, tasks) {
+  if (!t || !Array.isArray(tasks)) return []
+  return tasks.filter((c) => c && c.parent === t.id)
+}
+
+export function parentOf(t, tasks) {
+  if (!t || !Array.isArray(tasks) || !t.parent) return null
+  return tasks.find((p) => p && p.id === t.parent) || null
 }
 
 export function hasDueTime(t) {

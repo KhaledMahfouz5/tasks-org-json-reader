@@ -6,10 +6,11 @@
     syncPath,
     autoSave,
     lang
-  } from '@/lib/stores.js'
+  } from '@/lib/state.js'
+  import { notify } from '@/lib/notify.js'
   import { tr } from '@/lib/i18n.js'
   import { taskCounts, uniqueTags, listsOf } from '@/lib/backup.js'
-  import { saveBackupFile } from '@/lib/stores.js'
+  import { saveBackupFile } from '@/lib/io.js'
 
   $: data = $backupData
   $: counts = data ? taskCounts(data) : null
@@ -26,6 +27,12 @@
   function setFilter(value) {
     activeFilter.set(value)
     sidebarOpen.set(false)
+  }
+
+  async function onExport() {
+    const res = await saveBackupFile()
+    if (!res.ok) notify(tr($lang, 'exportFailed', { error: res.error?.message || res.reason || '…' }), 'err')
+    else notify(tr($lang, res.via === 'download' ? 'exportDownload' : 'exportSuccess'), 'ok')
   }
 </script>
 
@@ -95,7 +102,7 @@
       </span>
     </label>
 
-    <button class="btn btn-primary" on:click={() => saveBackupFile()}>
+    <button class="btn btn-primary" on:click={onExport}>
       {tr($lang, 'export')}
     </button>
   </div>

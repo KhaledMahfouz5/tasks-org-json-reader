@@ -13,17 +13,17 @@
     backupData,
     syncOpen,
     confirmState,
-    toast,
     sidebarOpen,
     syncPath,
-    autoSave,
-    notify,
+    autoSave
+  } from '@/lib/state.js'
+  import { toast, notify } from '@/lib/notify.js'
+  import {
     saveBackupFile,
     applyBackup,
-    readAsText,
     autoSaveNow,
     pickSyncFolder
-  } from '@/lib/stores.js'
+  } from '@/lib/io.js'
   import { tr, dirFor } from '@/lib/i18n.js'
 
   const osDark = writable(false)
@@ -42,21 +42,42 @@
     document.documentElement.dataset.theme = resolvedTheme
   }
 
-  $: if ($backupData) {
-    clearTimeout(autoTimer)
-    autoTimer = setTimeout(() => autoSaveNow(), 500)
+  async function tryAutoSave() {
+    const res = await autoSaveNow()
+    if (!res) return
+    if (res.reason === 'unsupported' && res.error) {
+      notify(tr($lang, 'autoSaveUnsupported'), 'err')
+    } else if (res.reason === 'cancelled' || res.reason === 'not-configured') {
+      // user dismissed picker / feature off — silent
+    } else if (!res.ok) {
+      notify(tr($lang, 'autoSaveFailed', { error: res.error?.message || res.reason || '…' }), 'err')
+    } else {
+      notify(tr($lang, 'saved'), 'ok')
+    }
   }
 
-  async function handleImportFile(file) {
+  $: if ($backupData) {
+    clearTimeout(autoTimer)
+    autoTimer = setTimeout(tryAutoSave, 500)
+  }
+
+  async function importFromInput(file) {
     if (!file) return
-    try {
-      const text = await readAsText(file)
-      applyBackup(text, file.name)
-    } catch {
+    const text = await file.text().catch(() => null)
+    if (text == null) {
       notify(tr($lang, 'fileReadError'), 'err')
-    } finally {
-      if (importInput) importInput.value = ''
+    } else {
+      const res = applyBackup(text, file.name)
+      if (!res.ok) notify(tr($lang, 'invalidJson', { error: res.error }), 'err')
+      else notify(tr($lang, 'importSuccess', { count: res.count }), 'ok')
     }
+    if (importInput) importInput.value = ''
+  }
+
+  async function onCtrlSave() {
+    const res = await saveBackupFile()
+    if (!res.ok) notify(tr($lang, 'exportFailed', { error: res.error?.message || res.reason || '…' }), 'err')
+    else notify(tr($lang, res.via === 'download' ? 'exportDownload' : 'exportSuccess'), 'ok')
   }
 
   function onKey(e) {
@@ -67,7 +88,7 @@
     }
     if (mod && (e.key === 's' || e.key === 'S')) {
       e.preventDefault()
-      saveBackupFile()
+      onCtrlSave()
     }
   }
 
@@ -105,7 +126,7 @@
       dragDepth = 0
       dragging = false
       const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]
-      if (f) handleImportFile(f)
+      if (f) importFromInput(f)
     }
     const onMq = (ev) => osDark.set(ev.matches)
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
@@ -149,7 +170,7 @@
   type="file"
   accept=".json,application/json"
   style="display:none"
-  on:change={(e) => handleImportFile(e.target.files[0])}
+  on:change={(e) => importFromInput(e.target.files[0])}
   tabindex="-1"
 />
 
@@ -223,8 +244,8 @@
 
       <div class="field">
         <label for="sync-path">{tr($lang, 'syncFolder')}</label>
-        <div style="display:flex;gap:8px">
-          <input id="sync-path" class="input" type="text" bind:value={$syncPath} placeholder={tr($lang, 'folderPath')} />
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="sync-path" class="input" type="text" style="min-width:0;flex:1" bind:value={$syncPath} placeholder={tr($lang, 'folderPath')} />
           <button class="btn" on:click={() => pickSyncFolder()}>{tr($lang, 'browse')}</button>
         </div>
         <p class="small muted" style="margin:6px 0 0">{tr($lang, 'syncPathHint')}</p>

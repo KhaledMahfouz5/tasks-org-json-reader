@@ -1,6 +1,8 @@
 <script>
-  import { readAsText, applyBackup, notify, lang } from '@/lib/stores.js'
+  import { lang } from '@/lib/state.js'
+  import { notify } from '@/lib/notify.js'
   import { tr } from '@/lib/i18n.js'
+  import { importFile } from '@/lib/file-import.js'
 
   let fileInput
   let busy = false
@@ -11,10 +13,9 @@
     if (!file || busy) return
     busy = true
     try {
-      const text = await readAsText(file)
-      applyBackup(text, file.name)
-    } catch {
-      notify(tr($lang, 'fileReadError'), 'err')
+      const res = await importFile(file)
+      if (!res.ok) notify(tr($lang, 'invalidJson', { error: res.error?.message || res.error }), 'err')
+      else notify(tr($lang, 'importSuccess', { count: res.count }), 'ok')
     } finally {
       busy = false
       if (fileInput) fileInput.value = ''

@@ -6,7 +6,7 @@
     lang,
     editing,
     editingListId
-  } from '@/lib/stores.js'
+  } from '@/lib/state.js'
   import { tr } from '@/lib/i18n.js'
   import {
     newTask,
