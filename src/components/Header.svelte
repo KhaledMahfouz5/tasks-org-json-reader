@@ -5,7 +5,8 @@
     optionsOpen,
     lang,
     theme,
-    searchQuery
+    searchDraft,
+    searchCommitted
   } from '@/lib/state.js'
   import { tr } from '@/lib/i18n.js'
 
@@ -17,6 +18,26 @@
     const order = ['system', 'light', 'dark']
     const idx = order.indexOf($theme)
     theme.set(order[(idx + 1) % order.length])
+  }
+
+  function commitSearch() {
+    const v = $searchDraft.trim()
+    searchCommitted.set(v)
+  }
+
+  function clearSearch() {
+    searchDraft.set('')
+    searchCommitted.set('')
+  }
+
+  function onSearchKey(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      commitSearch()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      clearSearch()
+    }
   }
 </script>
 
@@ -38,13 +59,37 @@
   </div>
 
   <div class="header-search">
+    {#if !$searchCommitted && $searchDraft}
+      <span class="search-hint" aria-hidden="true">
+        <kbd class="kbd kbd-enter">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 10l-4 4l4 4" />
+            <path d="M5 14h11a4 4 0 0 0 4 -4v-4" />
+          </svg>
+        </kbd>
+      </span>
+    {/if}
     <input
       class="input"
       type="search"
-      bind:value={$searchQuery}
+      bind:value={$searchDraft}
+      on:keydown={onSearchKey}
       placeholder={tr($lang, 'searchPlaceholder')}
       aria-label={tr($lang, 'search')}
     />
+    {#if $searchDraft}
+      <button
+        class="search-clear"
+        type="button"
+        aria-label={tr($lang, 'clearSearch')}
+        title={tr($lang, 'clearSearch')}
+        on:click={clearSearch}
+      >
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M6 18L18 6" />
+        </svg>
+      </button>
+    {/if}
   </div>
 
   <div class="header-actions">

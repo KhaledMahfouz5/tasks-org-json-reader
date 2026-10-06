@@ -2,7 +2,7 @@
   import {
     backupData,
     activeFilter,
-    searchQuery,
+    searchCommitted,
     lang,
     editing,
     editingListId,
@@ -25,12 +25,14 @@
     listsOf,
     DAY
   } from '@/lib/backup.js'
+  import { searchTasks } from '@/lib/search.js'
   import TaskItem from './TaskItem.svelte'
 
   $: data = $backupData
   $: tasks = (data && data.tasks) || []
   $: filter = $activeFilter
-  $: query = $searchQuery.trim().toLowerCase()
+  $: query = $searchCommitted.trim().toLowerCase()
+  $: searching = !!query
   $: todayStart = startOfToday()
   $: gBy = $groupBy
   $: gDir = $groupDir
@@ -46,9 +48,22 @@
     return t && (t.completed > 0 || t.modified > t.created)
   }
 
-  function match(t) {
-    if (!query) return true
-    return `${t.title || ''} ${t.notes || ''}`.toLowerCase().includes(query)
+  function scopeMatches(t) {
+    if (!data) return false
+    if (filter === 'trash') return isDeleted(t)
+    if (isDeleted(t)) return false
+    if (notStarted && !started(t)) return false
+    if (filter === 'completed') return isDone(t)
+    if (filter === 'important') return open(t) && t.importance < 3
+    if (filter === 'today')
+      return open(t) && t.dueDate >= todayStart && t.dueDate < todayStart + DAY
+    if (filter === 'overdue') return open(t) && t.dueDate > 0 && t.dueDate < todayStart
+    if (filter === 'all') return open(t)
+    if (filter.startsWith('list:'))
+      return open(t) && String(t.listKey) === filter.slice(5)
+    if (filter.startsWith('tag:'))
+      return open(t) && tagsFor(data, t).some((k) => k.tagUid === filter.slice(4))
+    return false
   }
 
   function getStart(t) {
@@ -88,24 +103,21 @@
     })
   }
 
-  $: filtered = (() => {
-    if (!data) return []
-    if (filter === 'trash') return tasks.filter((t) => isDeleted(t) && match(t))
-    const live = tasks.filter((t) => !isDeleted(t) && match(t))
-    const live2 = notStarted ? live : live.filter((t) => started(t))
-    if (filter === 'completed') return live2.filter(isDone)
-    if (filter === 'important') return live2.filter((t) => open(t) && t.importance < 3)
-    if (filter === 'today')
-      return live2.filter((t) => open(t) && t.dueDate >= todayStart && t.dueDate < todayStart + DAY)
-    if (filter === 'overdue') return live2.filter((t) => open(t) && t.dueDate > 0 && t.dueDate < todayStart)
-    if (filter === 'all') return live2.filter(open)
-    if (filter.startsWith('list:'))
-      return live2.filter((t) => open(t) && String(t.listKey) === filter.slice(5))
-    if (filter.startsWith('tag:'))
-      return live2.filter((t) =>
-        open(t) && tagsFor(data, t).some((k) => k.tagUid === filter.slice(4))
-      )
-    return []
+  // `inScope` is the active sidebar view, no search applied yet.
+  $: inScope = data ? tasks.filter(scopeMatches) : []
+  // `matched` runs fuzzy search over the in-scope tasks; ranks by score.
+  $: matched = searching ? searchTasks(inScope, query, ['title', 'notes']) : null
+
+  $: filtered = searching
+    ? (matched && matched.length ? matched.map((m) => m.task) : [])
+    : inScope
+  $: searchHits = searching && matched ? matched.length : 0
+  $: searchMisses = searching && matched ? matched.length === 0 : false
+  // Fallback: when search has zero matches, show the most recently modified
+  // open tasks in the current scope, so the user isn't stuck on an empty list.
+  $: recentFallback = (() => {
+    if (!searching || !searchMisses) return []
+    return [...inScope].sort((a, b) => (b.modified || 0) - (a.modified || 0)).slice(0, 8)
   })()
 
   function nodeRows(list) {
@@ -176,34 +188,42 @@
   }
 
   $: groups = (() => {
-    if (!filtered.length) return []
-    if (filter !== 'all' && !gBy.startsWith?.('list') /* still allow */) {
-      // Non-'all' filters render as a single labelled group so existing UX is preserved
-      if (filter !== 'all') {
-        const items = sortList(filtered)
-        const singleLabel = (() => {
-          if (filter.startsWith('list:')) {
-            const l = listOf(data, filter.slice(5))
-            return l ? l.name : ''
-          }
-          if (filter.startsWith('tag:')) {
-            const k = (uniqueTags(data) || []).find((x) => x.tagUid === filter.slice(4))
-            return k ? k.name : ''
-          }
-          return tr($lang, filter)
-        })()
-        return [
-          { key: filter, label: singleLabel || tr($lang, filter), items, rows: nodeRows(items) }
-        ]
-      }
+    const list = filtered
+    if (!list.length) return []
+    if (searching) {
+      // Search results: no grouping, just a flat list ordered by fuzzy score.
+      return [
+        {
+          key: 'search',
+          label: `${tr($lang, 'searchResults')} · ${searchHits}`,
+          items: list,
+          rows: list.map((t) => ({ t, depth: 0 }))
+        }
+      ]
     }
-    // 'all' filter — honor groupBy
+    if (filter !== 'all') {
+      const items = sortList(list)
+      const singleLabel = (() => {
+        if (filter.startsWith('list:')) {
+          const l = listOf(data, filter.slice(5))
+          return l ? l.name : ''
+        }
+        if (filter.startsWith('tag:')) {
+          const k = (uniqueTags(data) || []).find((x) => x.tagUid === filter.slice(4))
+          return k ? k.name : ''
+        }
+        return tr($lang, filter)
+      })()
+      return [
+        { key: filter, label: singleLabel || tr($lang, filter), items, rows: nodeRows(items) }
+      ]
+    }
     if (gBy === 'nothing') {
-      const items = sortList(filtered)
+      const items = sortList(list)
       return [{ key: 'all', label: '', items, rows: nodeRows(items) }]
     }
     const map = new Map()
-    for (const t of filtered) {
+    for (const t of list) {
       const k = groupKey(t)
       if (!map.has(k)) map.set(k, [])
       map.get(k).push(t)
@@ -250,6 +270,16 @@
       {/each}
     </div>
   {/each}
+{:else if searching && searchMisses}
+  <div class="empty">
+    <p style="margin:0 0 6px"><strong>{tr($lang, 'noResults')}</strong></p>
+    <p class="muted small" style="margin:0 0 16px">{tr($lang, 'recentInstead')}</p>
+    <div class="task-list">
+      {#each recentFallback as t (t.remoteId || t.id)}
+        <TaskItem task={t} depth={0} />
+      {/each}
+    </div>
+  </div>
 {:else}
   <div class="empty">
     <p style="margin:0 0 6px"><strong>{tr($lang, 'noTasks')}</strong></p>

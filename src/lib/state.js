@@ -51,7 +51,11 @@ export const originalFileName = writable('')
 export const syncPath = persisted('taskorg:syncpath', '', (v) => String(v || ''))
 export const autoSave = persisted('taskorg:autosave', false, (v) => Boolean(v))
 export const activeFilter = writable('all')
-export const searchQuery = writable('')
+// `searchDraft` mirrors the input field; `searchCommitted` is only updated
+// when the user presses Enter (or clears the search), so the task list
+// doesn't re-render on every keystroke.
+export const searchDraft = writable('')
+export const searchCommitted = writable('')
 export const editing = writable(null)
 export const editingListId = writable(null)
 export const sidebarOpen = writable(false)

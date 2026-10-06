@@ -154,6 +154,71 @@ svg.icon {
 .header-search {
   max-width: 380px;
   margin-inline-start: auto;
+  position: relative;
+}
+
+.header-search .input {
+  padding-inline-end: 32px;
+}
+
+.search-hint {
+  position: absolute;
+  inset-inline-end: 34px;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--muted);
+  animation: hint-pulse 1.6s ease-in-out infinite;
+}
+
+.search-hint .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.kbd-enter {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.55; transform: translateY(-50%) scale(1); }
+  50% { opacity: 1; transform: translateY(-50%) scale(1.06); }
+}
+
+.search-clear {
+  position: absolute;
+  inset-inline-end: 4px;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.search-clear .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .header-actions {
