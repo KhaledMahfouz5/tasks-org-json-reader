@@ -7,6 +7,7 @@
   import EmptyState from './components/EmptyState.svelte'
   import TaskList from './components/TaskList.svelte'
   import TaskEditor from './components/TaskEditor.svelte'
+  import OptionsMenu from './components/OptionsMenu.svelte'
   import {
     lang,
     theme,
@@ -196,6 +197,8 @@
 {/if}
 
 <TaskEditor />
+
+<OptionsMenu />
 
 {#if dragging}
   <div class="modal-backdrop">

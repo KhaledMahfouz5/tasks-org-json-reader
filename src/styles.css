@@ -559,6 +559,27 @@ svg.icon {
   gap: 8px;
 }
 
+.group-title:first-child {
+  margin-block-start: 6px;
+}
+
+.group-title.overdue {
+  color: var(--danger);
+}
+
+.group-title.overdue::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex: none;
+}
+
+.group-title.today {
+  color: var(--p-medium);
+}
+
 .empty {
   padding: 48px 20px;
   text-align: center;
