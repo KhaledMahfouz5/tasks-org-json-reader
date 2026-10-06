@@ -57,6 +57,24 @@ export const editingListId = writable(null)
 export const sidebarOpen = writable(false)
 export const confirmState = writable(null)
 export const syncOpen = writable(false)
+export const optionsOpen = writable(false)
+
+const GROUP_FIELDS = ['nothing', 'deadline', 'start', 'priority', 'modified', 'created', 'list']
+const DIRECTIONS = ['asc', 'desc']
+
+export const groupBy = persisted('taskorg:groupBy', 'deadline', (v) =>
+  GROUP_FIELDS.includes(v) ? v : 'deadline'
+)
+export const groupDir = persisted('taskorg:groupDir', 'asc', (v) =>
+  DIRECTIONS.includes(v) ? v : 'asc'
+)
+export const sortBy = persisted('taskorg:sortBy', 'deadline', (v) =>
+  GROUP_FIELDS.includes(v) ? v : 'deadline'
+)
+export const sortDir = persisted('taskorg:sortDir', 'asc', (v) =>
+  DIRECTIONS.includes(v) ? v : 'asc'
+)
+export const showNotStarted = persisted('taskorg:showNotStarted', false, (v) => Boolean(v))
 
 export const fsRoot = writable(null)
 export const currentFileHandle = writable(null)

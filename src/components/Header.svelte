@@ -1,5 +1,12 @@
 <script>
-  import { sidebarOpen, syncOpen, lang, theme, searchQuery } from '@/lib/state.js'
+  import {
+    sidebarOpen,
+    syncOpen,
+    optionsOpen,
+    lang,
+    theme,
+    searchQuery
+  } from '@/lib/state.js'
   import { tr } from '@/lib/i18n.js'
 
   function toggleLang() {
@@ -72,6 +79,19 @@
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 11A8 8 0 1 0 18 17" />
         <path d="M20 4v6h-6" />
+      </svg>
+    </button>
+
+    <button
+      class="btn btn-icon"
+      on:click={() => optionsOpen.set(true)}
+      title={tr($lang, 'moreOptions')}
+      aria-label={tr($lang, 'moreOptions')}
+    >
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="6" cy="12" r="1.6" />
+        <circle cx="12" cy="12" r="1.6" />
+        <circle cx="18" cy="12" r="1.6" />
       </svg>
     </button>
   </div>
