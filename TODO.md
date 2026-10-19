@@ -5,7 +5,7 @@ Complete. See `README.md` for usage, format details and the ownership notes belo
 ## Living Roadmap
 
 - [x] Config fix: drop `runes` from svelte.config.js
-- [x] `npm install` green (Svelte 4.2.20, Vite 5.4, plugin-svelte 3)
+- [x] `npm install` green (Svelte 5.57.2, Vite 8.3.4, plugin-svelte 7.3.1)
 - [x] `src/lib/backup.js` — parse/serialize/helpers + round-trip tests
 - [x] `src/lib/i18n.js` — EN/AR strings + dirFor
 - [x] `src/lib/stores.js` — lang/theme/backupData/filters/toast stores + file IO
@@ -40,8 +40,12 @@ browsers can choose the folder (reference) and save via Export.
 
 - File System Access handles are in-memory; desktop folders are re-picked per session
   (browser permission model). Documented in README.
-- `main.js` was already Svelte-5-style (`mount`); Svelte 4 has no `mount`, so rewritten to
-  `new App({ target })`.
+- `src/main.js` mounts the root component via `mount(App, { target })` from `svelte/`
+  (Svelte 5 runtime API). All `.svelte` files keep their legacy Svelte 4 syntax — Svelte 5
+  supports it natively per the [official migration guide](https://svelte.dev/docs/svelte/v5-migration-guide),
+  so every component renders unchanged. The one-line migration back to `mount(...)` from
+  `new App({ target })` cleared 7 `npm audit` advisories (svelte SSR XSS / source-map-js /
+  esbuild dev-server SSRF).
 - Automated browser tests: limited to flows reachable before file-upload (see
   `testsprite_tests/`). File import verified programmatically (parse→serialize→re-parse =
   0 warnings, unknown fields intact).

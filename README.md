@@ -195,12 +195,18 @@ the editor updates `caldavTasks` so the change survives the round-trip. In backu
 │   ├── App.svelte
 │   ├── styles.css
 │   ├── lib/
-│   │   ├── backup.js   # parse/serialize/helpers
-│   │   ├── i18n.js     # EN/AR strings
-│   │   └── stores.js   # state + persistence + file IO
+│   │   ├── backup.js        # parse/serialize/helpers + round-trip safety
+│   │   ├── i18n.js          # EN/AR strings + dirFor
+│   │   ├── state.js         # reactive state + localStorage persistence
+│   │   ├── stores.js        # legacy facade re-exporting state, io, notify
+│   │   ├── io.js            # file IO (File System Access API + download fallback)
+│   │   ├── file-import.js   # import-flow glue around io.js
+│   │   ├── notify.js        # toast/notification helpers
+│   │   └── search.js        # fuzzy match + score
 │   └── components/
 │       ├── Header.svelte
 │       ├── Sidebar.svelte
+│       ├── OptionsMenu.svelte
 │       ├── DropZone.svelte
 │       ├── EmptyState.svelte
 │       ├── TaskList.svelte
