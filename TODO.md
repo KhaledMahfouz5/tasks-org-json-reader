@@ -56,5 +56,4 @@ browsers can choose the folder (reference) and save via Export.
   `new App({ target })` cleared 7 `npm audit` advisories (svelte SSR XSS / source-map-js /
   esbuild dev-server SSRF).
 - Automated browser tests: limited to flows reachable before file-upload (see
-  `testsprite_tests/`). File import verified programmatically (parse→serialize→re-parse =
   0 warnings, unknown fields intact).
