@@ -1,0 +1,21 @@
+[Unit]
+Description=Tasks.org Backup Viewer (static SPA)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nobody
+Group=nogroup
+WorkingDirectory=/opt/tasks-org-json-reader
+ExecStart=/usr/bin/node node_modules/vite/bin/vite.js preview --host 0.0.0.0 --port 4173
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -31,6 +31,52 @@ npm run build
 npm run preview
 ```
 
+## Production deployment (systemd)
+
+Serve the built app as a long-running service on any Linux host with systemd (Raspberry Pi, NAS, VPS). A unit file is provided at [`install/systemd/tasks-org-json-reader.service`](install/systemd/tasks-org-json-reader.service) — it runs `vite preview` on port `4173`, bound to `0.0.0.0`, as user `nobody`.
+
+1. **Build** the production bundle:
+
+    ```bash
+    npm ci
+    npm run build
+    ```
+
+2. **Install** to `/opt/tasks-org-json-reader` (or any path — update `WorkingDirectory=` in the unit if you change it):
+
+    ```bash
+    sudo mkdir -p /opt/tasks-org-json-reader
+    sudo cp -r dist node_modules package.json package-lock.json \
+        /opt/tasks-org-json-reader/
+    sudo chown -R nobody:nogroup /opt/tasks-org-json-reader
+    ```
+
+3. **Install and start** the unit:
+
+    ```bash
+    sudo cp install/systemd/tasks-org-json-reader.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now tasks-org-json-reader.service
+    ```
+
+4. **Verify**:
+
+    ```bash
+    systemctl status tasks-org-json-reader.service   # active (running)
+    curl -I http://localhost:4173/                   # HTTP/1.1 200 OK
+    journalctl -u tasks-org-json-reader.service -f   # follow logs
+    ```
+
+Open `http://<server-ip>:4173/` from any device on the LAN.
+
+**Customizing the unit** (edit `/etc/systemd/system/tasks-org-json-reader.service`, then `sudo systemctl daemon-reload && sudo systemctl restart tasks-org-json-reader.service`):
+
+- Different port: change `--port 4173` in `ExecStart=`.
+- Different install path: change `WorkingDirectory=` to match.
+- `node` lives elsewhere (Debian/Ubuntu ship it as `/usr/bin/nodejs`): point `ExecStart=` there, or use `/usr/bin/env node …`.
+- Run as a different user: change `User=` / `Group=` and re-`chown` the install dir.
+- Serve only on localhost (LAN-isolated): change `--host 0.0.0.0` to `--host 127.0.0.1` or drop `--host` (defaults to localhost) and add a reverse proxy (Caddy/nginx) for TLS.
+
 ## License
 
 GNU General Public License v3.0 **only** — see [LICENSE](LICENSE).
@@ -139,6 +185,7 @@ the editor updates `caldavTasks` so the change survives the round-trip. In backu
 
 ```
 ├── index.html
+├── install/systemd/tasks-org-json-reader.service
 ├── package.json
 ├── public/favicon.svg
 ├── sample-backup.json       # (legacy simplified format fixture)
