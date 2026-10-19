@@ -1,4 +1,4 @@
-import { readAsText, applyBackup } from './io.js'
+import { readAsText, applyBackup } from './io/text.js'
 
 /**
  * Read a File and apply it as a backup. Returns `{ ok, error?, warnings?, count? }`.

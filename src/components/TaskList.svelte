@@ -13,8 +13,9 @@
     showNotStarted
   } from '@/lib/state.js'
   import { tr } from '@/lib/i18n.js'
+  import { newTask } from '@/lib/backup/io.js'
+  import { DAY } from '@/lib/backup/schema.js'
   import {
-    newTask,
     isDone,
     isDeleted,
     hasDueDate,
@@ -22,9 +23,8 @@
     tagsFor,
     listOf,
     uniqueTags,
-    listsOf,
-    DAY
-  } from '@/lib/backup.js'
+    listsOf
+  } from '@/lib/backup/query.js'
   import { searchTasks } from '@/lib/search.js'
   import TaskItem from './TaskItem.svelte'
 

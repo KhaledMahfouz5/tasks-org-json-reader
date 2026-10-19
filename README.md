@@ -195,11 +195,19 @@ the editor updates `caldavTasks` so the change survives the round-trip. In backu
 │   ├── App.svelte
 │   ├── styles.css
 │   ├── lib/
-│   │   ├── backup.js        # parse/serialize/helpers + round-trip safety
+│   │   ├── backup/
+│   │   │   ├── schema.js    # format constants, newRemoteId, emptyData (data dictionary)
+│   │   │   ├── io.js        # parse + serialize + normalize + coerce primitives
+│   │   │   ├── query.js     # predicates + lists/tags/counts/sort
+│   │   │   └── format.js    # locale-aware UI formatters (priority, due, recurrence)
 │   │   ├── i18n.js          # EN/AR strings + dirFor
 │   │   ├── state.js         # reactive state + localStorage persistence
-│   │   ├── stores.js        # legacy facade re-exporting state, io, notify
-│   │   ├── io.js            # file IO (File System Access API + download fallback)
+│   │   ├── tasks.js         # task-domain mutations (set done, soft delete, commit)
+│   │   ├── io/
+│   │   │   ├── text.js       # readAsText, applyBackup (file import flow)
+│   │   │   ├── save.js       # save strategies (handle / picker / download) + saveBackupFile
+│   │   │   ├── folder.js     # folder picker (modern + webkitdirectory fallback)
+│   │   │   └── auto-save.js  # auto-save orchestrator + dir prompt state
 │   │   ├── file-import.js   # import-flow glue around io.js
 │   │   ├── notify.js        # toast/notification helpers
 │   │   └── search.js        # fuzzy match + score

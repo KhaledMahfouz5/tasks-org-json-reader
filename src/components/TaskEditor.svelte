@@ -11,18 +11,18 @@
     commitTask,
     softDeleteTask,
     nextFreeId
-  } from '@/lib/state.js'
+  } from '@/lib/tasks.js'
   import { notify } from '@/lib/notify.js'
   import { tr } from '@/lib/i18n.js'
+  import { PRIORITIES } from '@/lib/backup/schema.js'
   import {
-    PRIORITIES,
     tagsFor,
     listsOf,
     childrenOf,
     parentOf,
-    isDone,
-    recurrenceSummary
-  } from '@/lib/backup.js'
+    isDone
+  } from '@/lib/backup/query.js'
+  import { recurrenceSummary } from '@/lib/backup/format.js'
 
   $: task = $editing
   $: data = $backupData

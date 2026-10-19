@@ -9,8 +9,8 @@
   } from '@/lib/state.js'
   import { notify } from '@/lib/notify.js'
   import { tr } from '@/lib/i18n.js'
-  import { taskCounts, uniqueTags, listsOf } from '@/lib/backup.js'
-  import { saveBackupFile } from '@/lib/io.js'
+  import { taskCounts, uniqueTags, listsOf } from '@/lib/backup/query.js'
+  import { saveBackupFile } from '@/lib/io/save.js'
 
   $: data = $backupData
   $: counts = data ? taskCounts(data) : null

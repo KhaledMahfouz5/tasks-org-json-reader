@@ -19,12 +19,10 @@
     autoSave
   } from '@/lib/state.js'
   import { toast, notify } from '@/lib/notify.js'
-  import {
-    saveBackupFile,
-    applyBackup,
-    autoSaveNow,
-    pickSyncFolder
-  } from '@/lib/io.js'
+  import { applyBackup } from '@/lib/io/text.js'
+  import { saveBackupFile } from '@/lib/io/save.js'
+  import { autoSaveNow } from '@/lib/io/auto-save.js'
+  import { pickSyncFolder } from '@/lib/io/folder.js'
   import { tr, dirFor } from '@/lib/i18n.js'
 
   const osDark = writable(false)

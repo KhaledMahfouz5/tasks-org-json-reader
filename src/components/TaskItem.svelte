@@ -12,19 +12,18 @@
     softDeleteTask,
     restoreTask,
     toggleCollapsed
-  } from '@/lib/state.js'
+  } from '@/lib/tasks.js'
   import {
     isDone,
     isDeleted,
     hasSubtask,
     hasDueDate,
-    dueLabel,
-    recurrenceSummary,
     tagsFor,
     listOf,
     parentOf,
     startOfToday
-  } from '@/lib/backup.js'
+  } from '@/lib/backup/query.js'
+  import { dueLabel, recurrenceSummary } from '@/lib/backup/format.js'
   import { tr } from '@/lib/i18n.js'
 
   export let task

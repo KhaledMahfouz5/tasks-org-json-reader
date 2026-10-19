@@ -6,9 +6,18 @@ Complete. See `README.md` for usage, format details and the ownership notes belo
 
 - [x] Config fix: drop `runes` from svelte.config.js
 - [x] `npm install` green (Svelte 5.57.2, Vite 8.3.4, plugin-svelte 7.3.1)
-- [x] `src/lib/backup.js` — parse/serialize/helpers + round-trip tests
+- [x] `src/lib/backup/schema.js` — format constants + id generator
+- [x] `src/lib/backup/io.js` — parseBackup / serializeBackup + normalize + coerce helpers
+- [x] `src/lib/backup/query.js` — predicates + lists/tags/counts/sort
+- [x] `src/lib/backup/format.js` — locale-aware UI formatters
 - [x] `src/lib/i18n.js` — EN/AR strings + dirFor
-- [x] `src/lib/stores.js` — lang/theme/backupData/filters/toast stores + file IO
+- [x] `src/lib/state.js` — reactive state + localStorage persistence
+- [x] `src/lib/tasks.js` — task-domain mutations on the backup store
+- [x] `src/lib/io/text.js` — readAsText, applyBackup (file-input → store flow)
+- [x] `src/lib/io/save.js` — three save strategies (handle / picker / download) chained by `saveBackupFile`
+- [x] `src/lib/io/folder.js` — folder picker (modern `showDirectoryPicker` + `webkitdirectory` fallback)
+- [x] `src/lib/io/auto-save.js` — auto-save orchestrator on top of `save.js` + `folder.js`
+- [x] `src/lib/file-import.js`, `src/lib/notify.js`, `src/lib/search.js` — focused helpers
 - [x] `src/styles.css` — tokens, light/dark, RTL, responsive primitives
 - [x] Components: Header, Sidebar, DropZone, EmptyState, TaskList, TaskItem, TaskEditor
 - [x] `src/App.svelte` — shell, sync modal, toasts, kbd shortcuts
